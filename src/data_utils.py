@@ -6,13 +6,16 @@ import json
 
 def load_data(file_path, **args):
     """
-    Load data from a JSON file.
+    Carga los datos desde un archivo JSON.
+    
+    Esta función es el primer paso para procesar los datos de entrada del hackathon.
+    Te permite importar los datos brutos a un DataFrame de Pandas para su fácil manipulación.
     
     Args:
-        file_path (str or Path): Path to the JSON file.
+        file_path (str o Path): Ruta al archivo JSON.
         
     Returns:
-        pd.DataFrame: DataFrame containing the data.
+        pd.DataFrame: DataFrame que contiene los datos listos para el análisis.
     """
     try:
         return pd.read_json(file_path,**args)
@@ -22,6 +25,21 @@ def load_data(file_path, **args):
 
     
 def prepare_dataset(df):
+    """
+    Prepara y estructura el dataset crudo para las pruebas del hackathon.
+    
+    Esta función se encarga de:
+    1. Extraer el último turno válido de la conversación entre el usuario y el asistente.
+    2. Rellenar las respuestas propuestas ('proposed_answer') en caso de que estén vacías con
+       la respuesta final, lo cual es útil si el 'verdict' ha sido favorable (passed).
+    3. Mapear el 'verdict' ('passed'/'failed') a un formato categórico/binario (1 o 0).
+    
+    Args:
+        df (pd.DataFrame): DataFrame que contiene los datos crudos originales.
+        
+    Returns:
+        pd.DataFrame: Un DataFrame estructurado, listo para el EDA, evaluación o Fine-Tuning de Prometheus.
+    """
     
         
     qa_last_messages = df["raw"].apply(lambda x: get_last_valid_turn(x["messages"])).apply(pd.Series)
@@ -39,11 +57,14 @@ def prepare_dataset(df):
 
 def save_data(data, file_path):
     """
-    Save data to a JSON file.
+    Guarda los datos procesados en un archivo JSON.
+    
+    Utiliza esta función para persistir tus DataFrames o listas de diccionarios después de procesarlos,
+    generando los archivos de salida necesarios para las entregas del hackathon.
     
     Args:
-        data (list or pd.DataFrame): Data to save.
-        file_path (str or Path): Path to save the file.
+        data (lista o pd.DataFrame): Los datos que deseas guardar.
+        file_path (str o Path): La ruta de destino del archivo JSON a crear.
     """
     try:
         if isinstance(data, pd.DataFrame):

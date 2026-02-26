@@ -406,6 +406,13 @@ def apply_grammar_ordered(
 
 @dataclass
 class CustomConfig:
+    """
+    Configuración personalizada para el proceso de corrupción de prompts (Bloque 3).
+    
+    Esta clase permite a los participantes del hackathon ajustar el número de errores
+    (tipográficos y gramaticales) y la probabilidad de cada tipo de error. 
+    ¡Juega con estos pesos para ver cómo el modelo maneja diferentes niveles de ruido!
+    """
 
     n_typos: int = 2
     n_grammar_changes: int = 2
@@ -513,6 +520,25 @@ def process_prompts(
     grammar_range: Tuple[int, int] = (3, 4),
     typos_accents_drop_prob: float = 0.60
 ) -> List[Dict[str, str]]:
+    """
+    Función principal para generar variantes corruptas de una lista de prompts.
+    
+    En el contexto del hackathon para evaluar la robustez (Robustness), esta función
+    toma los prompts originales y genera tres variantes:
+    1. Errores tipográficos (Typos).
+    2. Errores gramaticales predefinidos.
+    3. Una combinación personalizada según `CustomConfig`.
+    
+    Args:
+        prompts (List[str]): Lista de textos (prompts) originales.
+        custom_cfg (CustomConfig, optional): Configuración para el Bloque 3.
+        typos_range (Tuple[int, int]): Rango mínimo y máximo de errores tipográficos.
+        grammar_range (Tuple[int, int]): Rango mínimo y máximo de errores gramaticales.
+        typos_accents_drop_prob (float): Probabilidad de eliminar tildes (0 a 1).
+        
+    Returns:
+        List[Dict[str, str]]: Lista de diccionarios con el prompt original y sus 3 variantes.
+    """
     custom_cfg = custom_cfg or CustomConfig()
 
     typo_ops = TypoOps()

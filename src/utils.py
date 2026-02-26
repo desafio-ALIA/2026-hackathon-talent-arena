@@ -4,13 +4,15 @@ from pathlib import Path
 
 def load_data(file_path):
     """
-    Load data from a JSON file.
+    Carga datos estructurados desde un archivo JSON.
+    
+    Esencial para leer los datasets iniciales de entrada proporcionados en el hackathon.
     
     Args:
-        file_path (str or Path): Path to the JSON file.
+        file_path (str o Path): La ruta de sistema al archivo JSON.
         
     Returns:
-        pd.DataFrame: DataFrame containing the data.
+        pd.DataFrame: Un DataFrame listo para procesarse mediante Pandas.
     """
     try:
         return pd.read_json(file_path)
@@ -20,11 +22,13 @@ def load_data(file_path):
 
 def save_data(data, file_path):
     """
-    Save data to a JSON file.
+    Guarda los datos procesados durante el hackathon a un archivo JSON en disco.
+    
+    Es de gran utilidad para guardar predicciones, resultados generados y poder validarlos luego.
     
     Args:
-        data (list or pd.DataFrame): Data to save.
-        file_path (str or Path): Path to save the file.
+        data (lista de diccionarios o pd.DataFrame): Dato/s a guardar (tus resultados o transformaciones).
+        file_path (str o Path): La ruta junto al nombre del archivo de salida.
     """
     try:
         if isinstance(data, pd.DataFrame):

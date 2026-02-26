@@ -7,13 +7,16 @@ from peft import PeftModel
 
 def get_model_and_tokenizer(model_name="prometheus-eval/prometheus-7b-v2.0" ):
     """
-    Load the Prometheus model and tokenizer.
+    Carga el modelo Prometheus y su tokenizador asociado desde Hugging Face.
+    
+    Esta función es esencial para el hackathon ya que inicializa el evaluador LLM-as-a-Judge.
+    Recuerda configurar tu token de Hugging Face de antemano.
     
     Args:
-        model_name (str): The specific Prometheus model version to load.
+        model_name (str): La versión específica del modelo de Prometheus a cargar.
         
     Returns:
-        model, tokenizer: The loaded model and tokenizer.
+        model, tokenizer: Tupla con el modelo y el tokenizador listos para realizar inferencias.
     """
     hf_token = os.getenv("HF_TOKEN")
     if not hf_token:
@@ -132,6 +135,19 @@ def model_predict_batched(model, tokenizer, batch, input_col = "user_content"):
 
 
 def load_lora_model(model_name, model_path):
+    """
+    Carga un modelo base y le aplica los pesos ajustados de un entrenamiento LoRA (PEFT).
+    
+    Durante el hackathon, usarás esta función para cargar tu propio modelo afinao (Fine-Tuned)
+    y comparar sus evaluaciones con las del modelo original.
+    
+    Args:
+        model_name (str): Nombre o ruta del modelo base original (p. ej., "prometheus-eval/prometheus-7b-v2.0").
+        model_path (str): Ruta donde se encuentran guardados los adaptadores LoRA entrenados.
+        
+    Returns:
+        model, tokenizer: Tupla con el modelo ajustado y su tokenizador.
+    """
 
     # 1. Load the original BASE model (the one you started with)
     base_model = AutoModelForCausalLM.from_pretrained(model_name, device_map="auto")
