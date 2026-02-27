@@ -23,3 +23,7 @@ output/
 data/*
 # 2. Creamos la excepción para el archivo que quieres mantener
 !data/dataset_sample.json
+
+# Ocultamos la evaluación del participante
+scripts/generate_ground_truth.py
+data/validation_dataset.json
