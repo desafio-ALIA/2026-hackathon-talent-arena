@@ -171,7 +171,12 @@ class Submission:
         formatted_prompts = []
         for _, row in df.iterrows():
             
-            # Ajuste de las claves para 'format_instruction' según el nuevo esquema
+            # El 'sample' ahora sirve para mapear explícitamente las claves que sabemos 
+            # que sí o sí necesita la implementación de format_instruction.
+            # Además le pasaremos el `row.to_dict()` para expandir cualquier clave nueva.
+            row_dict = dict(row)
+            
+            # Ajuste de las claves tradicionales
             sample = {
                 'category_name': row.get('category', ''),
                 'challenge': row.get('challenge', ''),
@@ -179,7 +184,9 @@ class Submission:
                 'answer': row.get('last_interaction', ''), 
                 'proposed_answer': row.get('corrected_response_validated', '')
             }
-            f_instr = format_instruction(sample, system_prompt, absolute_prompt, output_col=self.pred_col)
+            
+            # Pasamos **row_dict como kwargs para tener toda la data a disposición del template
+            f_instr = format_instruction(sample, system_prompt, absolute_prompt, output_col=self.pred_col, **row_dict)
             formatted_prompts.append(f_instr[self.pred_col])
             
         df[self.pred_col] = formatted_prompts

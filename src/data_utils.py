@@ -157,16 +157,22 @@ def get_last_valid_turn(messages):
             }
     return None
 
-def format_instruction(sample,system_prompt, absolute_prompt, add_message_history=False, output_col = "user_content"):
+def format_instruction(sample, system_prompt, absolute_prompt, add_message_history=False, output_col="user_content", **kwargs):
     """
     Construye el prompt estructurado para el modelo Prometheus (LLM-as-a-Judge).
     
     Combina el historial de conversación, la respuesta propuesta, la respuesta de referencia 
-    y la rúbrica de evaluación en una plantilla única.
+    y la rúbrica de evaluación en una plantilla única. Ahora soporta variables dinámicas (kwargs).
 
     Args:
         sample (dict): Un ejemplo del dataset que contiene 'question', 'proposed_answer', 
                        'answer', 'verdict' y opcionalmente 'history'.
+        system_prompt (str): El prompt del sistema general.
+        absolute_prompt (str): La plantilla de prompt que puede usar llaves {var} customizadas.
+        add_message_history (bool): Si añadir o no el historial.
+        output_col (str): Clave de salida.
+        **kwargs (dict): Variables extras a inyectar en el absolute_prompt.
+
 
     Returns:
         dict: Diccionario con la clave 'user_content' lista para ser procesada por el tokenizer.
@@ -187,14 +193,25 @@ def format_instruction(sample,system_prompt, absolute_prompt, add_message_histor
     else:
         context = question
 
+    # Construimos un diccionario base con las variables mapeadas obligatoriamente
+    base_vars = {
+        'category_name': category_name,
+        'challenge': challenge,
+        'question': context,
+        'answer': answer,
+        'proposed_answer': proposed_answer
+    }
+    
+    # Le añadimos cualquier otra variable extra que se le haya pasado a format_instruction
+    base_vars.update(kwargs)
+    
+    # Creamos un SafeDict para evitar KeyErrors si el usuario añadió una variable {rara} en el prompt
+    class SafeDict(dict):
+        def __missing__(self, key):
+            return '{' + key + '}' # Si falla dejamos la variable tal cual y no rompemos la app
+            
     # Inyección en la plantilla de evaluación absoluta
-    user_content = system_prompt + "\n\n" + absolute_prompt.format(
-        category_name=category_name,
-        challenge=challenge,
-        question= context,
-        answer=answer,
-        proposed_answer= proposed_answer
-    )
+    user_content = system_prompt + "\n\n" + absolute_prompt.format_map(SafeDict(**base_vars))
     
     return {output_col: user_content}
 

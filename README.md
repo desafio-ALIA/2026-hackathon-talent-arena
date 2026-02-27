@@ -73,6 +73,14 @@ Una vez concluido el desarrollo:
   - Se valorará positivamente si `"model_pred"` y `"model_pred_typos"` coinciden, lo cual indicaría que el modelo fine-tuneado es más robusto ante errores.
 - Finalmente, **ese fichero resultante se nos compartirá** y nosotros evaluaremos los resultados comparando con las etiquetas reales de cada observación.
 
+### Importante: Modificación de los Prompts
+Si decides modificar el `ABSOLUTE_PROMPT` para la evaluación final, ten en cuenta que el template debe contener como mínimo los siguientes placeholders (variables entre llaves) para que el script pueda inyectar la información en cada observación correctamente:
+- `{question}`: La última interacción o pregunta del usuario en la conversación.
+- `{answer}`: La respuesta generada por el agente de IA a evaluar.
+- `{proposed_answer}`: La respuesta real y verificada (ground truth) de referencia.
+
+*(Puedes flexibilizar o añadir más variables en el prompt si tu dataset las incluye, pero esos tres placeholders son los mapeos base)*
+
 ## Notas
 
 - El modelo por defecto es `prometheus-eval/prometheus-7b-v2.0`.
