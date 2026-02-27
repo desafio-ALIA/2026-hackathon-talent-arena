@@ -5,4 +5,21 @@ __pycache__/
 .ipynb_checkpoints/
 output/
 data/*
-!data/dataset.json
+!data/dataset_sample.json# Entornos virtuales y caché
+.venv/
+__pycache__/
+*.pyc
+
+# Variables de entorno y Jupyter
+.env
+.ipynb_checkpoints/
+
+# Salidas de modelos/datos
+output/
+!output/dataset_preds_sample.json
+!output/output_robutness_sample.json
+# Regla para la carpeta data:
+# 1. Ignoramos todo el contenido de la carpeta
+data/*
+# 2. Creamos la excepción para el archivo que quieres mantener
+!data/dataset_sample.json

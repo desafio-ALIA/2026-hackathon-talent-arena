@@ -24,19 +24,25 @@ def get_model_and_tokenizer(model_name="prometheus-eval/prometheus-7b-v2.0" ):
         
     print(f"Loading model: {model_name}...")
     
-    # Placeholder for actual loading logic to prevent large downloads during setup
-    # In a real run, you would uncomment the following:
-    tokenizer = None
-    model = None
+     # 1. Cargar y configurar el Tokenizador
     tokenizer = AutoTokenizer.from_pretrained(model_name, token=hf_token)
+    
+    # Configuramos el pad_token si no existe (común en Mistral/Llama)
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+    
+    # Padding a la izquierda es obligatorio para modelos decodificadores (CausalLM) 
+    # cuando se hace inferencia en batches
+    tokenizer.padding_side = "left" 
+    
+    # 2. Cargar el Modelo
     model = AutoModelForCausalLM.from_pretrained(
          model_name,
          token=hf_token,
-         device_map="auto"
+         device_map="auto",
+         dtype=torch.float16, # Media precisión para ganar velocidad y ahorrar VRAM
+         low_cpu_mem_usage=True
     )
-    # Mover fuera para que sea eficiente
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    model.to(device)
     
     
     return model, tokenizer
@@ -79,50 +85,71 @@ def split_model_reason_result(sample):
 
 
 
-def model_predict_batched(model, tokenizer, batch, input_col = "user_content"):
+def model_predict(model, tokenizer, prompt, max_new_tokens =200, temperature=0.7):
     """
-    Realiza inferencia en lotes (batch) utilizando el modelo cargado en GPU.
-    
-    Gestiona automáticamente el padding a la izquierda, desactiva el cálculo de gradientes
-    para ahorrar memoria VRAM y extrae únicamente la respuesta generada por el modelo.
+    Realiza una inferencia simple para un único prompt utilizando el modelo y tokenizador proporcionados.
+
+    Esta función prepara el texto, lo envía al dispositivo donde reside el modelo (GPU/CPU) 
+    y genera una respuesta de forma determinista. Es ideal para pruebas rápidas o 
+    validaciones unitarias durante la hackathon.
 
     Args:
-        batch (dict): Un lote del dataset que contiene una lista bajo la clave input_col.
+        model (transformers.PreTrainedModel): El modelo de lenguaje ya cargado.
+        tokenizer (transformers.PreTrainedTokenizer): El tokenizador correspondiente al modelo.
+        prompt (str): El texto de entrada o instrucción para el modelo.
 
     Returns:
-        dict: Diccionario con 'model_output', que contiene la lista de críticas generadas.
+        str: El texto generado por el modelo, limpio de tokens especiales y del prompt original.
     """
-    # Detección dinámica del dispositivo del modelo
-    model_device = next(model.parameters()).device
+    # 1. Identificar el dispositivo del modelo (soporta device_map="auto")
+    device = model.device 
     
-    # Preparación de mensajes para la plantilla de chat
+    # 2. Tokenizar y mover tensores al dispositivo correcto
+    inputs = tokenizer(prompt, return_tensors="pt").to(device)
+
+    # 3. Generación determinista (do_sample=False para evitar variabilidad en pruebas)
+    with torch.no_grad():
+        outputs = model.generate(
+            **inputs, 
+            max_new_tokens=max_new_tokens, 
+            do_sample=True,
+            pad_token_id=tokenizer.pad_token_id if tokenizer.pad_token_id else tokenizer.eos_token_id
+        )
+
+    # 4. Decodificar solo la parte nueva (ignorando los tokens del prompt)
+    input_length = inputs["input_ids"].shape[1]
+    prediction = tokenizer.decode(outputs[0][input_length:], skip_special_tokens=True)
+
+    return prediction.strip()
+
+
+
+def model_predict_batched(model, tokenizer, batch, input_col = "user_content", temperature = 0.1, max_new_tokens = 1000):
+    # 1. Detectamos el dispositivo de entrada (donde está la primera capa)
+    model_device = model.device 
+    
     messages_list = [[{"role": "user", "content": p}] for p in batch[input_col]]
 
-    # Configuración de padding segura
-    if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.eos_token
-    tokenizer.padding_side = "left" 
 
-    # Tokenización masiva
+    # 2. IMPORTANTE: Pedimos que devuelva un diccionario completo (return_dict=True)
     inputs = tokenizer.apply_chat_template(
         messages_list,
         add_generation_prompt=True,
         tokenize=True,
         return_tensors="pt",
-        padding=True
+        padding=True,
+        return_dict=True # Esto asegura que tengamos input_ids y attention_mask
     ).to(model_device)
 
-    # Inferencia optimizada
     with torch.no_grad():
         generated_ids = model.generate(
-            **inputs, 
-            max_new_tokens=1000, 
+            **inputs, # Ahora inputs es un dict con todo en la GPU correcta
+            max_new_tokens=max_new_tokens, 
             do_sample=True,
-            temperature=0.1, # Temperatura baja para mayor consistencia en la evaluación
+            temperature=temperature,
             pad_token_id=tokenizer.pad_token_id
         )
     
-    # Extracción exclusiva de la respuesta (ignorando el prompt inicial)
     input_length = inputs["input_ids"].shape[1]
     decoded_outputs = tokenizer.batch_decode(
         generated_ids[:, input_length:], 

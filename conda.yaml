@@ -1,0 +1,29 @@
+name: sft_hackathon_alia_env
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - pip
+  - ipykernel
+  - matplotlib
+  - pandas
+  - seaborn
+  - python-dotenv
+  - scikit-learn
+  - pyarrow
+  - datasets
+  - accelerate
+  - transformers
+  - trl
+  - peft
+  - sentencepiece
+  - pip:
+      # Usamos --extra-index-url en lugar de --index-url
+      - --extra-index-url https://download.pytorch.org/whl/cu121
+      - torch
+      - torchvision
+      - torchaudio
+      - bitsandbytes
