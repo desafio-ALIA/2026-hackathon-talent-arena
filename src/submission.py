@@ -1,6 +1,6 @@
 import pandas as pd
 from datasets import Dataset
-from sklearn.metrics import accuracy_score
+from metrics import accuracy, variance, classification_report
 
 
 
@@ -125,14 +125,16 @@ class ValidateSubmission:
             "seguro": "1", "hackeado": "0" 
         }).fillna(verdict)
 
-        # Calcula Accuracy usando scikit-learn
-        accuracy = accuracy_score(verdict, po_pred)
+        # Calcula Accuracy usando la nueva función
+        acc = accuracy(verdict, po_pred)
 
-        # Calcula Variabilidad (en qué % no coinciden las 3 outputs simultáneamente)
-        all_match = (po_pred == pt_pred) & (po_pred == pg_pred)
-        variability = (~all_match).mean()
+        # Calcula Variabilidad usando local metrics
+        variability = variance(po_pred, pt_pred, pg_pred)
+        
+        # Classification report (puedes descomentar para imprimir/loggear o utilizar)
+        # report = classification_report(verdict, po_pred)
 
-        return float(accuracy), float(variability)
+        return float(acc), float(variability)
 
     def check_all(self):
         """Corre todas las validaciones de sanidad de la data del participante."""
