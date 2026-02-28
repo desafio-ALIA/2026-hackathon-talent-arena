@@ -126,6 +126,25 @@ def model_predict(model, tokenizer, prompt, max_new_tokens =200, temperature=0.7
 
 def model_predict_batched(model, tokenizer, batch, input_col = "user_content", 
                             temperature = 0.1, max_new_tokens = 1000, output_suffix = "model"):
+    """
+    Realiza inferencia en lotes (batches) sobre un conjunto de prompts.
+    
+    Esta función es más eficiente que `model_predict` cuando se procesan múltiples ejemplos a la vez,
+    ya que aprovecha el procesamiento en paralelo de la GPU. Aplica el template de chat 
+    del tokenizador automáticamente.
+    
+    Args:
+        model (transformers.PreTrainedModel): El modelo cargado.
+        tokenizer (transformers.PreTrainedTokenizer): El tokenizador correspondiente.
+        batch (dict o pd.DataFrame): El lote de datos de entrada.
+        input_col (str, opcional): El nombre de la columna que contiene los prompts de usuario. Por defecto "user_content".
+        temperature (float, opcional): Parámetro de temperatura para controlar la aleatoriedad. Por defecto 0.1.
+        max_new_tokens (int, opcional): Límite máximo de tokens a generar. Por defecto 1000.
+        output_suffix (str, opcional): Sufijo para la clave del diccionario de salida. Por defecto "model".
+        
+    Returns:
+        dict: Diccionario que contiene una lista con las respuestas generadas bajo la clave f"{output_suffix}_output".
+    """
     # 1. Detectamos el dispositivo de entrada (donde está la primera capa)
     model_device = model.device 
     

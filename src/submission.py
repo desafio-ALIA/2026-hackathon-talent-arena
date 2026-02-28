@@ -60,10 +60,25 @@ class ValidateSubmission:
         assert not missing, f"Error: A la submission le faltan estas columnas obligatorias: {missing}"
 
     def check_verdict_isin_gt(self):
+        """
+        Verifica que el dataset de validación (ground truth) contenga las columnas 
+        necesarias para evaluar el veredicto ('human_val' o 'verdict_validated').
+        
+        Raises:
+            KeyError: Si no se encuentran las columnas de validación requeridas.
+        """
         if "human_val" not in self.df_validation.columns and "verdict_validated" not in self.df_validation.columns:
             raise KeyError("No se encontró la columna 'human_val' ni 'verdict_validated' en el dataset de validación.")
 
     def merge_submission_and_validation(self):
+        """
+        Une el dataframe de la submission enviada con el dataframe original de validación.
+        Intenta hacer el join mediante la columna 'id'. Si no es posible, realiza 
+        una concatenación simple por posición.
+        
+        Returns:
+            pd.DataFrame: DataFrame fusionado con las predicciones y el ground truth.
+        """
         val_id_col = 'id' if 'id' in self.df_validation.columns else 'iam-id' if 'iam-id' in self.df_validation.columns else 'record_id' if 'record_id' in self.df_validation.columns else None
         
         if "id" in self.df_submission.columns and val_id_col:

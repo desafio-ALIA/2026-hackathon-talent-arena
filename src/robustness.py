@@ -1,61 +1,64 @@
 from datasets import Dataset
 
 
-def create_robustness_dataset(df_input: pd.DataFrame = None, pred_col = "user_content") -> Dataset:
-        """
-        Crea un dataset con distintas variaciones de ruido o corrupción 
-        (typos, errores gramaticales, etc.) aplicadas a los prompts originales
-        para evaluar la robustez del modelo.
+def create_robustness_dataset(df_input: pd.DataFrame = None, pred_col="user_content") -> Dataset:
+    """
+    Crea un dataset con distintas variaciones de ruido o corrupción 
+    (typos, errores gramaticales, etc.) aplicadas a los prompts originales
+    para evaluar la robustez del modelo.
+    
+    Args:
+        df_input (pd.DataFrame): DataFrame de entrada con los prompts originales.
+        pred_col (str): Nombre de la columna que contiene los prompts. Por defecto "user_content".
 
-        Returns:
-            Dataset: Dataset de HuggingFace con las variaciones generadas.
-        """
-        # 1. Definimos la configuración base como un diccionario
-        config_notebook = {
-            "n_typos": 1,
-            "n_grammar_changes": 5,
-            
-            "typo_type_weights": {
-                "qwerty": 0.55,
-                "omission": 0.25,
-                "abbr": 0.20,
-                "space_remove": 0.10
-            },
-            
-            "vowel_delete_bias": 0.9,
-            "abbr_q_weight": 0.6,
-            "abbr_pq_weight": 0.4,
-            
-            "grammar_rule_weights": {
-                "habia_to_habian": 1.0,
-                "hemos_to_habemos": 0.9,
-                "homophones": 0.8,
-                "porque": 0.9,
-                "seseo_ceceo": 0.9,
-                "preterite_s": 0.9,
-                "drop_initial_h": 0.9,
-                "swap_bv": 0.9
-            },
-            
-            "remove_open_questions": True,
-            "strip_accents": True,
-            "remove_commas": True,
-            "lowercase": True
-        }
-
-
-        prompts = df_input[pred_col].tolist()
-
-        # Usamos process_prompts en lugar de process_csv ya que así evitamos problemas
-        # de compatibilidad si el dataset de entrada es un JSON o ya viene cargado en pandas.
-        custom_cfg = CustomConfig(**config_notebook)
-        results = process_prompts(prompts, custom_cfg=custom_cfg)
+    Returns:
+        Dataset: Dataset de HuggingFace con las variaciones generadas.
+    """
+    # 1. Definimos la configuración base como un diccionario
+    config_notebook = {
+        "n_typos": 1,
+        "n_grammar_changes": 5,
         
-        df = pd.DataFrame(results)
-        dataset = Dataset.from_pandas(df)
+        "typo_type_weights": {
+            "qwerty": 0.55,
+            "omission": 0.25,
+            "abbr": 0.20,
+            "space_remove": 0.10
+        },
+        
+        "vowel_delete_bias": 0.9,
+        "abbr_q_weight": 0.6,
+        "abbr_pq_weight": 0.4,
+        
+        "grammar_rule_weights": {
+            "habia_to_habian": 1.0,
+            "hemos_to_habemos": 0.9,
+            "homophones": 0.8,
+            "porque": 0.9,
+            "seseo_ceceo": 0.9,
+            "preterite_s": 0.9,
+            "drop_initial_h": 0.9,
+            "swap_bv": 0.9
+        },
+        
+        "remove_open_questions": True,
+        "strip_accents": True,
+        "remove_commas": True,
+        "lowercase": True
+    }
 
-        return dataset
 
+    prompts = df_input[pred_col].tolist()
+
+    # Usamos process_prompts en lugar de process_csv ya que así evitamos problemas
+    # de compatibilidad si el dataset de entrada es un JSON o ya viene cargado en pandas.
+    custom_cfg = CustomConfig(**config_notebook)
+    results = process_prompts(prompts, custom_cfg=custom_cfg)
+    
+    df = pd.DataFrame(results)
+    dataset = Dataset.from_pandas(df)
+
+    return dataset
 
 def model_preds(model, tokenizer, dataset: Dataset, input_col: str, suffix: str) -> Dataset:
         """
