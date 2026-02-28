@@ -1,86 +1,141 @@
-# Exploración y Fine-Tuning de Prometheus (LLM-as-a-Judge)
+# ⚔️ Prometheus LLM-as-a-Judge: Hackathon Talent Arena
 
-Este proyecto contiene scripts y notebooks para explorar y realizar fine-tuning (LoRA) sobre el modelo Prometheus, un modelo diseñado para actuar como juez en la evaluación de otros LLMs.
+Bienvenido al repositorio oficial para el reto de **Fine-Tuning de Prometheus**. En este proyecto, exploraremos cómo utilizar y adaptar modelos de lenguaje especializados en evaluación (LLM-as-a-Judge) para detectar comportamientos inadecuados en interacciones de IA.
 
-## Estructura del Proyecto
+---
 
-- `data/`: Contiene los conjuntos de datos. `dataset.json` es el dataset inicial.
-- `docs/`: Documentación adicional. Revisa `docs/dataset.md` para entender la estructura de los datos de entrada.
-- `src/`: Scripts de utilidad, manejo de datos, modelos y generación de ruidos.
-- `notebooks/`: 
-    - `01_eda.ipynb`: Análisis exploratorio de datos. ¡Empieza por aquí!
-    - `02_finetuning.ipynb`: Script de fine-tuning usando LoRA para entrenar tu modelo Juez.
-    - `03_robustness.ipynb`: Script para evaluar la robustez de tu modelo frente a diferentes variaciones en los prompts introducidos por el usuario.
-- `output/`: Directorio para guardar modelos entrenados y resultados.
+## 🎯 Objetivo del Reto
 
-## Instrucciones de Instalación (AWS SageMaker)
+El propósito principal es entrenar un **modelo Juez** capaz de discernir de manera precisa si una interacción entre un usuario y un modelo de lenguaje es **adecuada** o **inadecuada**.
 
-1. Abre una terminal en SageMaker.
-2. Crea una carpeta llamada `hackathon` y entra en ella:
+### El Contexto
+Los datos provienen de un reto previo donde usuarios intentaron "romper" modelos de lenguaje (Jailbreaking). 
+- **Verdict "passed":** El modelo resistió el ataque y respondió de forma segura.
+- **Verdict "failed":** El usuario logró que el modelo generara una respuesta inadecuada.
+
+Tu misión es ajustar **Prometheus-7b-v2.0** para que actúe como un evaluador crítico y robusto, capaz de identificar estos fallos incluso ante variaciones en el input. Para más detalles técnicos, consulta la **[descripción detallada del dataset en docs/dataset.md](docs/dataset.md)**.
+
+---
+
+## 🏗️ Estructura del Proyecto
+
+```text
+├── data/           # Datasets de entrenamiento y evaluación.
+├── docs/           # Documentación detallada. Revisa dataset.md para entender el formato.
+├── notebooks/      # Pipeline completo del reto:
+│   ├── 01_eda.ipynb          # Análisis Exploratorio (¡Empieza aquí!)
+│   ├── 02_finetuning.ipynb   # Entrenamiento con LoRA/QLoRA.
+│   ├── 03_robustness.ipynb   # Pruebas de resistencia ante ruido/typos.
+│   └── 04_submission.ipynb   # Generación de resultados finales.
+├── src/            # Código fuente (Utilidades, métricas, preprocesamiento).
+└── output/         # Modelos guardados y predicciones.
+```
+
+---
+
+## ⚙️ Configuración del Entorno (AWS SageMaker)
+
+Sigue estos pasos para preparar tu entorno de trabajo de manera eficiente:
+
+1. **Preparar el espacio**:
    ```bash
    mkdir hackathon && cd hackathon
-   ```
-3. Clona el repositorio del reto:
-   ```bash
    git clone https://github.com/desafio-ALIA/2026-hackathon-talent-arena
    ```
-4. Mueve la carpeta a tu directorio de SageMaker y entra:
+
+2. **Organizar directorios**:
    ```bash
    cd .. && mv hackathon/2026-hackathon-talent-arena /home/ec2-user/SageMaker/
    cd /home/ec2-user/SageMaker/2026-hackathon-talent-arena
    ```
-5. Haz una copia del archivo `.env-example` a `.env`:
+
+3. **Variables de Entorno**:
+   Copia el archivo de ejemplo y configura tu `HUGGINGFACE_TOKEN` si deseas acelerar la descarga de modelos.
    ```bash
    cp .env-example .env
    ```
-6. Introduce en `.env` tu clave de Hugging Face (opcional).
-7. Crea el entorno de conda con las dependencias necesarias:
+
+4. **Entorno Virtual**:
+   Creamos y activamos un entorno Conda optimizado para el reto.
    ```bash
    conda env create -f conda.yaml
-   ```
-8. Activa el entorno virtual:
-   ```bash
    conda activate sft_hackathon_env
-   ```
-9. Instala el kernel para poder seleccionarlo en los Jupyter Notebooks:
-   ```bash
    python -m ipykernel install --user --name sft_hackathon_alia_env --display-name "Python 3.11 (Hackathon ALIA)"
    ```
-10. ¡Importante! Al usar los notebooks, selecciona siempre el kernel **"Python 3.11 (Hackathon ALIA)"**.
 
-## Desarrollo del Reto
+> [!IMPORTANT]
+> Asegúrate de seleccionar el kernel **"Python 3.11 (Hackathon ALIA)"** al abrir cualquier Notebook.
 
-Para maximizar tus resultados durante el hackathon, el reto consta de las siguientes fases:
+---
 
-1. **Preparación de Datos**: Sube los datos que se te van a compartir a la carpeta `data/`. Pon el nombre del fichero de datos proporcionado en tu archivo `.env`. *(Se ha dejado un sample inicialmente para que puedas probar)*
-2. **Exploración de Datos**: Inspecciona y entiende los datos en `notebooks/01_eda.ipynb`.
-3. **Fine-Tuning del Modelo**: Entrena y ajusta el modelo en `notebooks/02_finetuning.ipynb`. (Nota que al final del notebook hay sugerencias para iterar y mejorar el modelo).
-4. **Evaluación de la Robustez**: Evalúa la robustez del modelo ajustado en `notebooks/03_robustness.ipynb`. 
-5. **Evaluación y Entrega**: Evalúa y entrega los resultados en `notebooks/04_submission.ipynb`. 
+## 🚀 Pipeline del Hackathon
 
-**SE PUEDE MODIFICAR TODO LO QUE SE QUIERA DEL REPOSITORIO**
+Para alcanzar la máxima puntuación, te recomendamos seguir este flujo de trabajo:
 
-### Terminado el reto: Evaluación y Entrega
+1. **Análisis (EDA)**: Comprende las categorías de riesgo y la distribución de los veredictos en [01_eda.ipynb](notebooks/01_eda.ipynb).
+2. **Entrenamiento**: Ajusta los hiperparámetros de LoRA para mejorar la precisión en [02_finetuning.ipynb](notebooks/02_finetuning.ipynb).
+3. **Robustez**: Evalúa la resistencia de tu modelo ante ruido y errores tipográficos en [03_robustness.ipynb](notebooks/03_robustness.ipynb). En este paso utilizaremos la herramienta **promptNoisES** para generar variaciones automáticas y medir su impacto.
+4. **Entrega**: Genera el archivo final de predicciones en [04_submission.ipynb](notebooks/04_submission.ipynb).
 
-Una vez concluido el desarrollo:
+---
 
-- Se os pasará un **dataset de test**, del cual deberéis devolver las predicciones del modelo en formato JSON. 
-- El JSON de test que se os proporciona tiene las mismas etiquetas que el json pero sin verdict (el target). 
-- Deberéis de generar el fichero
+## 📊 Evaluación y Entrega
 
-- **Criterios de Evaluación**:
-  - Se evaluará principalmente el **accuracy** entre el valor real y el valor predicho por el modelo (clasificando si es un texto OK o no de entrada).
-  - Se valorará positivamente si `"model_pred"` y `"model_pred_typos"` coinciden, lo cual indicaría que el modelo fine-tuneado es más robusto ante errores.
-- Finalmente, **ese fichero resultante se nos compartirá** y nosotros evaluaremos los resultados comparando con las etiquetas reales de cada observación.
+### Criterios de Puntuación
+| Criterio | Descripción |
+| :--- | :--- |
+| **Accuracy** | Precisión global comparada con el Ground Truth. |
+| **Robustez** | Consistencia de la predicción ante variaciones del texto (`model_pred` vs `model_pred_typos`). |
+| **Razonamiento** | Calidad del feedback generado por el modelo para justificar su veredicto. |
 
-### Importante: Modificación de los Prompts
-Si decides modificar el `ABSOLUTE_PROMPT` para la evaluación final, ten en cuenta que el template debe contener como mínimo los siguientes placeholders (variables entre llaves) para que el script pueda inyectar la información en cada observación correctamente:
-- `{question}`: La última interacción o pregunta del usuario en la conversación.
-- `{answer}`: La respuesta generada por el agente de IA a evaluar.
-- `{proposed_answer}`: La respuesta real y verificada (ground truth) de referencia.
+### Proceso de Entrega
+Al finalizar el tiempo, se proporcionará un **Dataset de Test**. Deberás procesarlo con tu modelo y entregar un archivo `submission.json` con el formato especificado en los notebooks.
 
-*(Puedes flexibilizar o añadir más variables en el prompt si tu dataset las incluye, pero esos tres placeholders son los mapeos base)*
+---
 
-## Notas
+## 📝 Notas Adicionales
+- Modelo Base: `prometheus-eval/prometheus-7b-v2.0`
+- **Libertad Total**: Tienes permiso para modificar cualquier parte del código, añadir librerías o cambiar la lógica de preprocesamiento para mejorar tus resultados.
 
-- El modelo por defecto es `prometheus-eval/prometheus-7b-v2.0`.
+---
+
+## 💡 Consejos para el Éxito (Iteraciones)
+
+¡Felicidades por llegar hasta aquí! El modelo base es un gran punto de partida, pero para destacar en el hackathon te sugerimos explorar estas vías:
+
+### 1. Perfecciona el Prompt (Prompt Engineering)
+El Juez es tan bueno como su rúbrica.
+- **Rúbricas Explícitas**: Revisa `src/prompts.py`. Asegúrate de que Prometheus entienda exactamente qué constituye un fallo de seguridad.
+- **Historial de Conversación**: Evaluar solo el último mensaje puede ser insuficiente. Prueba a incluir el contexto previo para detectar ataques multiturno.
+- **Few-Shot Prompting**: Provee ejemplos de respuestas ideales (*Reference Answers*) dentro del prompt para guiar el juicio del modelo.
+
+### 2. Calidad sobre Cantidad (Curación de Datos)
+- **Filtrado de Ruido**: Elimina ejemplos ambiguos del entrenamiento. Un modelo aprende mejor de pocos ejemplos claros que de muchos confusos.
+- **Balanceo**: Mantén un equilibrio entre casos *passed* y *failed* para evitar sesgos en el Juez.
+- **Data Augmentation**: Utiliza las sugerencias de respuestas corregidas para generar nuevos pares de entrenamiento.
+
+### 3. Ajuste de Hiperparámetros
+- **Estrategia LoRA**: Prueba a aumentar el rango (`r`) a 32 o 64 para capturar matices más complejos.
+- **Learning Rate**: Ajusta la tasa de aprendizaje (ej. `5e-5`). Si la pérdida fluctúa mucho, redúcela.
+- **Épocas**: Experimenta con 2-3 épocas, vigilando siempre que el modelo no empiece a memorizar los datos (overfitting).
+
+---
+
+## 📚 Recursos y Referencias
+
+### Prometheus & LLM-as-a-Judge
+- [Prometheus 2: Open-Source Language Models for Evaluation](https://github.com/prometheus-eval/prometheus-eval)
+- [Haystack Cookbook: Prometheus 2 Evaluation](https://colab.research.google.com/github/deepset-ai/haystack-cookbook/blob/main/notebooks/prometheus2_evaluation.ipynb)
+
+### Tutoriales de Fine-Tuning
+- [Mistral 7B Fine-Tuning Tutorial (DataCamp)](https://www.datacamp.com/es/tutorial/mistral-7b-tutorial)
+- [Fine-Tuning Mistral con LoRA (Brev.dev)](https://colab.research.google.com/github/brevdev/notebooks/blob/main/mistral-finetune-own-data.ipynb)
+
+---
+
+## 📄 Licencia
+
+Este proyecto se distribuye bajo la **Licencia MIT**. Consulta el archivo [LICENSE](LICENSE) para más información.
+
+---
+*Organizado por ALIA - Talent Arena 2026*
