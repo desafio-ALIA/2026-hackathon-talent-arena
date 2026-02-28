@@ -3,7 +3,7 @@ import re
 import json
 from datasets import load_dataset
 import os
-
+import string
 
 
 def load_data(file_path, **args):
@@ -24,49 +24,6 @@ def load_data(file_path, **args):
     except Exception as e:
         print(f"Error loading data: {e}")
         return None
-
-
-def download_hf_dataset(dataset_name, save_path, split="train", **kwargs):
-    """
-    Descarga un dataset desde Hugging Face y lo guarda en local en formato JSON.
-    
-    Esta función facilita la obtención de datasets públicos o privados 
-    desde el Hugging Face Hub, convirtiéndolos a DataFrame y guardándolos
-    en disco con una estructura similar a los archivos JSON que ya utilizamos.
-    
-    Args:
-        dataset_name (str): El nombre del dataset en el Hub (ej: "tatsu-lab/alpaca").
-        save_path (str): Ruta donde guardar el archivo JSON (ej: "data/dataset.json").
-        split (str, opcional): El split a descargar ("train", "test", etc.). Por defecto "train".
-        **kwargs: Argumentos extra para `load_dataset` (ej. `token=True` para repositorios privados).
-        
-    Returns:
-        pd.DataFrame: DataFrame con los datos, o None si hay algún error.
-    """
-    try:
-        
-        print(f"Descargando el dataset '{dataset_name}' (split: {split})...")
-        dataset = load_dataset(dataset_name, split=split, **kwargs)
-        df = dataset.to_pandas()
-        
-        # Asegurarse de que el directorio donde queremos guardarlo existe
-        save_dir = os.path.dirname(save_path)
-        if save_dir:
-            os.makedirs(save_dir, exist_ok=True)
-            
-        # Guardar como JSON con estructura de lista de registros (orient='records')
-        df.to_json(save_path, orient='records', indent=4, force_ascii=False)
-        print(f"Dataset guardado exitosamente en: {save_path}")
-        
-        return df
-        
-    except ImportError:
-        print("Error: Necesitas la librería 'datasets'. Instálala ejecutando 'pip install datasets'.")
-        return None
-    except Exception as e:
-        print(f"Error al descargar el dataset desde Hugging Face: {e}")
-        return None
-
 
 
 def prepare_dataset(df):
@@ -113,15 +70,36 @@ def save_data(data, file_path):
     """
     try:
         if isinstance(data, pd.DataFrame):
-            data = data.to_dict(orient='records')
+            data = data.to_dict(orient='records',
+                                 indent=2,
+                                 force_ascii=False)
         
+        elif isinstance(data, Dataset):
+            data = data.to_pandas().to_dict(orient='records',
+                                 indent=2,
+                                 force_ascii=False)
+
         with open(file_path, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=4)
         print(f"Data saved to {file_path}")
     except Exception as e:
         print(f"Error saving data: {e}")
 
+def message_to_conversation_str(history, question=""):
+    """
+    Convierte una lista de mensajes a un string de conversación previa a la respuesta del modelo.
+    
+    Args:
+        history (list): Lista de diccionarios con claves 'role' y 'content'.
+        question (str, opcional): Pregunta final del usuario.
 
+    Returns:
+        str: String de conversación previa a la respuesta del modelo.
+    """
+    content = "\n".join([f"{m.get('role', '').capitalize()}: {m.get('content', '')}" for m in history])
+    if question:
+        content += f"\nUser: {question}"
+    return content
     
 
 def get_last_valid_turn(messages):
@@ -153,75 +131,71 @@ def get_last_valid_turn(messages):
             return {
                 "question": user_msg["content"].strip(),
                 "answer": assistant_msg["content"].strip(),
-                "history": messages[:i-1]
+                "history": messages[:i-1],
+                "conversation": message_to_conversation_str(messages[:i-1], user_msg["content"].strip())
             }
     return None
 
-def format_instruction(sample, system_prompt, absolute_prompt, add_message_history=False, output_col="user_content", **kwargs):
+
+
+
+def extract_prompt_variables(sample, user_prompt):
+    """
+    Identifica las variables requeridas en una plantilla de prompt y las extrae del sample.
+    Si alguna variable requerida no está en el sample, lanza un KeyError.
+
+    Args:
+        sample (dict o pd.Series): Un ejemplo del dataset que contiene las variables.
+        user_prompt (str): La plantilla de prompt que usa llaves {var}.
+
+    Returns:
+        dict: Diccionario cerrado con únicamente las variables requeridas por el prompt.
+    """
+    # Identificar las variables que pide la plantilla de forma dinámica
+    vars_in_prompt = [fname for _, fname, _, _ in string.Formatter().parse(user_prompt) if fname is not None]
+    
+    base_vars = {}
+    
+    # Extraer las variables del sample, validando que existan
+    for var in vars_in_prompt:
+        if var not in sample:
+            raise KeyError(f"La variable '{var}' requerida en el prompt no está presente en el sample.")
+        base_vars[var] = sample[var]
+        
+    return base_vars
+
+def format_instruction(sample, system_prompt, user_prompt, output_col="user_content"):
     """
     Construye el prompt estructurado para el modelo Prometheus (LLM-as-a-Judge).
     
-    Combina el historial de conversación, la respuesta propuesta, la respuesta de referencia 
-    y la rúbrica de evaluación en una plantilla única. Ahora soporta variables dinámicas (kwargs).
+    Extrae las variables del prompt dinámicamente desde el sample. Si alguna variable
+    requerida en la plantilla del prompt no está en el sample, lanzará un KeyError.
 
     Args:
-        sample (dict): Un ejemplo del dataset que contiene 'question', 'proposed_answer', 
-                       'answer', 'verdict' y opcionalmente 'history'.
+        sample (dict o pd.Series): Un ejemplo del dataset que contiene las variables.
         system_prompt (str): El prompt del sistema general.
-        absolute_prompt (str): La plantilla de prompt que puede usar llaves {var} customizadas.
-        add_message_history (bool): Si añadir o no el historial.
+        user_prompt (str): La plantilla de prompt que usa llaves {var}.
         output_col (str): Clave de salida.
-        **kwargs (dict): Variables extras a inyectar en el absolute_prompt.
-
 
     Returns:
         dict: Diccionario con la clave 'user_content' lista para ser procesada por el tokenizer.
     """
-    category_name = sample.get('category_name') or ''
-    challenge = sample.get('challenge') or ''
-    question = sample.get('question') or ''
-    proposed_answer = sample.get('proposed_answer') or ''
-    answer = sample.get('answer') or ''
-    history = sample.get('history') or []
-    #verdict = sample.get('verdict') or None
-
-    # Reconstrucción del historial para dar contexto al Juez (opcional)
-    context = ""
-    if add_message_history:
-        context = "\n".join([f"{m['role'].capitalize()}: {m['content']}" for m in history])
-        context += f"\nUser: {question}"
-    else:
-        context = question
-
-    # Construimos un diccionario base con las variables mapeadas obligatoriamente
-    base_vars = {
-        'category_name': category_name,
-        'challenge': challenge,
-        'question': context,
-        'answer': answer,
-        'proposed_answer': proposed_answer
-    }
-    
-    # Le añadimos cualquier otra variable extra que se le haya pasado a format_instruction
-    base_vars.update(kwargs)
-    
-    # Creamos un SafeDict para evitar KeyErrors si el usuario añadió una variable {rara} en el prompt
-    class SafeDict(dict):
-        def __missing__(self, key):
-            return '{' + key + '}' # Si falla dejamos la variable tal cual y no rompemos la app
+    base_vars = extract_prompt_variables(sample, user_prompt)
             
     # Inyección en la plantilla de evaluación absoluta
-    user_content = system_prompt + "\n\n" + absolute_prompt.format_map(SafeDict(**base_vars))
+    user_content = system_prompt + "\n\n" + user_prompt.format(**base_vars)
     
     return {output_col: user_content}
 
 
-def prepare_sft_binary_text(sample, tokenizer_eos_token='</s>', output_col_name="prompt_sft", input_col_name="user_content", reasoning_col_name="val_goal_reasoning"):
+def prepare_sft_binary_text(sample, tokenizer_eos_token='</s>', output_col_name="prompt_sft", 
+                            input_col_name="user_content", reasoning_col_name="val_goal_reasoning",
+                            label_col_name="verdict"):
     """
     Prepara una muestra de datos para el Supervised Fine-Tuning (SFT) de Prometheus.
     """
     prompt = sample.get(input_col_name, "").strip()
-    raw_verdict = sample.get("verdict")
+    raw_verdict = sample.get(label_col_name)
     
     # Extraemos el razonamiento. Si por alguna razón está vacío, ponemos un texto genérico de respaldo
     # para no romper el formato de entrenamiento.
