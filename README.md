@@ -1,4 +1,4 @@
-# ⚔️ Prometheus LLM-as-a-Judge: Hackathon Talent Arena
+# ⚔️ LLM-as-a-Judge: Hackathon Talent Arena
 
 Bienvenido al repositorio oficial para el reto de **Fine-Tuning de un LLM as a judge**. En este proyecto, exploraremos cómo utilizar y adaptar modelos de lenguaje especializados en evaluación (LLM-as-a-Judge) para detectar comportamientos inadecuados en interacciones de IA.
 
@@ -147,7 +147,7 @@ $$
 ---
 
 ## 📝 Notas Adicionales
-- Modelo Base: Por defecto en los notebooks, se ha puesto `prometheus-eval/prometheus-7b-v2.0`, aunque es posible cambiar el modelo a otro juez de libre elección.
+- Modelo Base: Por defecto en los notebooks, se ha puesto `prometheus-eval/prometheus-7b-v2.0`, aunque es posible cambiar el modelo a otro juez de libre elección, siempre y cuando sea un modelo open-source.
 - **Libertad Total**: Tienes permiso para modificar cualquier parte del código, añadir librerías o cambiar la lógica de preprocesamiento para mejorar tus resultados.
 
 ---
