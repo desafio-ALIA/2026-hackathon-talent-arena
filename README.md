@@ -82,15 +82,67 @@ Para alcanzar la máxima puntuación, te recomendamos seguir este flujo de traba
 
 ## 📊 Evaluación y Entrega
 
-### Criterios de Puntuación
-| Criterio | Descripción |
-| :--- | :--- |
-| **Accuracy** | Precisión global comparada con el Ground Truth. |
-| **Robustez** | Consistencia de la predicción ante variaciones del texto (`model_pred` vs `model_pred_typos`). |
-| **Razonamiento** | Calidad del feedback generado por el modelo para justificar su veredicto. |
+### Resumen de Criterios de Evaluación
+
+Todos los criterios tienen el mismo peso (20%).
+
+| Criterio | Tipo | Indicador | Descripción | Peso (%) |
+|------------|------|------------|--------------|------------|
+| Correlación con humanos en escenario normal | Cuantitativo | Acc | Coincidencia etiquetas judge con etiquetas humanas | 20 |
+| Robustez entre escenarios | Cuantitativo | Acc | Estabilidad frente a perturbaciones | 20 |
+| Rigor metodológico y eficiencia técnica | Cualitativo | Likert 1-5 | Solidez experimental y uso eficiente de recursos | 20 |
+| Uso estratégico de datos | Cualitativo | Likert 1-5 | Calidad y justificación en la selección y composición de datos | 20 |
+| Contribución al dataset base | Cualitativo | Likert 1-5 | Mejora, análisis o curación del dataset original | 20 |
+
+Total = 100%
 
 ### Proceso de Entrega
 Al finalizar el tiempo, se proporcionará un **Dataset de Test**. Deberás procesarlo con tu modelo y entregar un archivo `submission.json` con el formato especificado en los notebooks.
+
+### Rúbricas Cualitativas
+
+#### Rigor metodológico y eficiencia técnica
+
+| Puntuación | Descripción |
+|------------|-------------|
+| 1 | Enfoque poco claro o improvisado. No se justifica el uso del modelo ni los recursos. |
+| 2 | Metodología básica con justificación limitada. Uso de recursos poco optimizado. |
+| 3 | Enfoque correcto y bien explicado. Uso razonable de recursos. |
+| 4 | Metodología sólida con controles claros y decisiones justificadas. Buena relación coste-rendimiento. |
+| 5 | Diseño experimental riguroso y altamente eficiente. Reflexión técnica profunda. |
+
+#### Uso estratégico de datos
+
+| Puntuación | Descripción |
+|------------|-------------|
+| 1 | Uso directo sin análisis ni selección. |
+| 2 | Uso directo sin análisis ni selección. |
+| 3 | Selección razonada y curación básica. |
+| 4 | Composición bien pensada y estratégica. |
+| 5 | Uso sofisticado y alineado con resultados. |
+
+#### Contribución al dataset base
+
+| Puntuación | Descripción |
+|------------|-------------|
+| 1 | Sin contribución relevante. |
+| 2 | Observaciones superficiales. |
+| 3 | Identificación estructurada de mejoras. |
+| 4 | Mejora tangible del dataset. |
+| 5 | Contribución sustancial y reutilizable. |
+
+### Cálculo de la Puntuación Final
+
+Cada criterio se convierte a porcentaje y se multiplica por su peso correspondiente:
+
+$$
+\text{Puntuación Final} = 
+(\text{Score}_{\text{corr}} \times 0.20) + 
+(\text{Score}_{\text{robust}} \times 0.20) + 
+(\text{Score}_{\text{rigor}} \times 0.20) + 
+(\text{Score}_{\text{datos}} \times 0.20) + 
+(\text{Score}_{\text{contribución}} \times 0.20)
+$$
 
 ---
 
