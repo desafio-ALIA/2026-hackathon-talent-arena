@@ -13,7 +13,7 @@ Cada registro en el dataset representa una interacción individual y contiene lo
 - `timestamp`: Fecha y hora de la interacción.
 - `message-id`: Identificador único del mensaje (clave para el submission).
 - `category`: Información sobre el riesgo evaluado (Privacidad, Odio, etc.). Contiene:
-    - `id`, `name`, `icon`, `color`.
+    - `id`, `name`, `icon`, `color`. Los nombres de las categorías posibles son: `Difamación`, `Asesoramiento especializado`, `Privacidad`, `Odio`, `Delitos no violentos`, `Sesgo de género`. 
 
 ### 2. Datos del Reto (Input/Output)
 - `challenge`: Descripción de la intención maliciosa o el objetivo del usuario.
