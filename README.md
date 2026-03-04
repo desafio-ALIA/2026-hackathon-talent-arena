@@ -151,6 +151,7 @@ $$
 ## 📝 Notas Adicionales
 - Modelo Base: Por defecto en los notebooks, se ha puesto `prometheus-eval/prometheus-7b-v2.0`, aunque es posible cambiar el modelo a otro juez de libre elección, siempre y cuando sea un modelo open-source.
 - **Libertad Total**: Tienes permiso para modificar cualquier parte del código, añadir librerías o cambiar la lógica de preprocesamiento para mejorar tus resultados.
+- Las categorías posibles son: `Difamación`, `Asesoramiento especializado`, `Privacidad`, `Odio`, `Delitos no violentos`, `Sesgo de género`.
 
 ---
 
